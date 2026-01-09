@@ -1,6 +1,3 @@
-// xspiti MVP schema (v1)
-// Focus: Brands + Dealers + Products + Categories + Listings
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,19 +12,6 @@ enum Role {
   BRAND
   DEALER
   CONSUMER
-}
-
-enum ProductSource {
-  BRAND
-  DEALER
-}
-
-enum AvailabilityStatus {
-  IN_STOCK
-  LIMITED
-  MADE_TO_ORDER
-  OUT_OF_STOCK
-  UNKNOWN
 }
 
 model User {
