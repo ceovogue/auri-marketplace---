@@ -17,11 +17,10 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Βρίσκουμε το Brand του χρήστη
   const brand = await prisma.brand.findUnique({
     where: { userId: user.id },
-    include: {
-      products: true,
-    },
+    select: { id: true },
   });
 
   if (!brand) {
@@ -31,5 +30,12 @@ export async function GET(req: Request) {
     );
   }
 
-  return NextResponse.json(brand.products);
+  // Στο minimal schema ΔΕΝ υπάρχει relation Brand.products,
+  // οπότε παίρνουμε products μέσω brandId από το Product table (αν υπάρχει).
+  const products = await prisma.product.findMany({
+    where: { brandId: brand.id },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return NextResponse.json(products);
 }
