@@ -1,44 +1,67 @@
-export const dynamic = "force-dynamic";
+// xspiti MVP schema (v1)
+// Focus: Brands + Dealers + Products + Categories + Listings
 
-import { NextResponse } from "next/server";
-import { getBearerToken, verifyJwt } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { Role } from "@prisma/client";
-
-export async function POST(req: Request) {
-  const token = getBearerToken(req.headers.get("authorization"));
-  const user = token ? verifyJwt(token) : null;
-
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (user.role !== Role.BRAND) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-
-  const body = await req.json().catch(() => ({}));
-  const { name } = body as { name?: string };
-
-  const cleanName = typeof name === "string" ? name.trim() : "";
-  if (!cleanName) return NextResponse.json({ error: "Missing field (name)" }, { status: 400 });
-
-  // ✅ userId είναι UNIQUE στο Brand, άρα upsert δουλεύει κανονικά
-  const brand = await prisma.brand.upsert({
-    where: { userId: user.id },
-    update: { name: cleanName },
-    create: { name: cleanName, userId: user.id },
-  });
-
-  return NextResponse.json(brand);
+generator client {
+  provider = "prisma-client-js"
 }
 
-export async function DELETE(req: Request) {
-  const token = getBearerToken(req.headers.get("authorization"));
-  const user = token ? verifyJwt(token) : null;
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
 
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (user.role !== Role.BRAND) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+enum Role {
+  ADMIN
+  BRAND
+  DEALER
+  CONSUMER
+}
 
-  // deleteMany για να μην σκάει αν δεν υπάρχει brand
-  await prisma.brand.deleteMany({
-    where: { userId: user.id },
-  });
+enum ProductSource {
+  BRAND
+  DEALER
+}
 
-  return NextResponse.json({ success: true });
+enum AvailabilityStatus {
+  IN_STOCK
+  LIMITED
+  MADE_TO_ORDER
+  OUT_OF_STOCK
+  UNKNOWN
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  passwordHash  String?
+  role          Role     @default(CONSUMER)
+
+  brand         Brand?
+  dealer        Dealer?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Brand {
+  id        String   @id @default(cuid())
+  name      String
+
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Dealer {
+  id        String   @id @default(cuid())
+  name      String
+
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
