@@ -1,51 +1,17 @@
-generator client {
-  provider = "prisma-client-js"
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+async function main() {
+  // empty seed - keeps build happy
+  console.log("seed: skipped");
 }
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-enum Role {
-  ADMIN
-  BRAND
-  DEALER
-  CONSUMER
-}
-
-model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  name          String?
-  passwordHash  String?
-  role          Role     @default(CONSUMER)
-
-  brand         Brand?
-  dealer        Dealer?
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}
-
-model Brand {
-  id        String   @id @default(cuid())
-  name      String
-
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Dealer {
-  id        String   @id @default(cuid())
-  name      String
-
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
