@@ -14,11 +14,21 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const { name } = body as { name?: string };
   if (!name) return NextResponse.json({ error: "Missing field (name)" }, { status: 400 });
+const existing = await prisma.brand.findFirst({
+  where: { ownerId: user.id },
+  select: { id: true },
+});
 
-  const brand = await prisma.brand.upsert({
-    where: { ownerId: user.id },
-    update: { name },
-    create: { name, ownerId: user.id },
+const brand = existing
+  ? await prisma.brand.update({
+      where: { id: existing.id },
+      data: { name },
+    })
+  : await prisma.brand.create({
+      data: { name, ownerId: user.id },
+    });
+
+  
   });
 
   return NextResponse.json(brand);
