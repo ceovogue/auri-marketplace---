@@ -1,0 +1,42 @@
+export default function ErgasiesAnakenisisPage() {
+  return (
+    <main className="pageWrap">
+      <header className="pageHeader">
+        <h1>Εργασίες Ανακαίνισης</h1>
+        <p className="muted">Διάλεξε είδος εργασίας και ζήτα προσφορά από τον κατάλληλο επαγγελματία.</p>
+      </header>
+
+      <section className="gridBlocks">
+        <div className="block">
+          <h3>Κουζίνα</h3>
+          <p>Ντουλάπια, πάγκοι, υδραυλικά, ηλεκτρολογικά, φωτισμός.</p>
+        </div>
+        <div className="block">
+          <h3>Μπάνιο</h3>
+          <p>Είδη υγιεινής, πλακάκια, ντουζιέρα, υδραυλικά, εξαερισμός.</p>
+        </div>
+        <div className="block">
+          <h3>Δάπεδα & Πλακάκια</h3>
+          <p>Laminate, ξύλο, πλακάκια/γρανιτοπλακάκια, σοβατεπιά.</p>
+        </div>
+        <div className="block">
+          <h3>Βαψίματα & Φινιρίσματα</h3>
+          <p>Χρώματα/βερνίκια, γυψοσανίδες, μικροεπισκευές.</p>
+        </div>
+        <div className="block">
+          <h3>Ενεργειακή αναβάθμιση</h3>
+          <p>Μόνωση, κουφώματα, θέρμανση/ψύξη, smart λύσεις.</p>
+        </div>
+        <div className="block">
+          <h3>Ηλεκτρολογικά & Υδραυλικά</h3>
+          <p>Πίνακες, καλωδιώσεις, σωληνώσεις, βάνες, αποχέτευση.</p>
+        </div>
+      </section>
+
+      <div style={{ marginTop: 14 }}>
+        <a className="btn primary" href="/interest">Ζήτα προσφορά</a>
+        <a className="btn ghost" style={{ marginLeft: 10 }} href="/professionals">Βρες τεχνίτη</a>
+      </div>
+    </main>
+  );
+}

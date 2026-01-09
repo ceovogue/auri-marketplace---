@@ -1,0 +1,173 @@
+// xspiti MVP schema (v1)
+// Focus: Brands + Dealers + Products (Brand & Dealer/Custom) + Category tree + Dealer listings (handoff to e-shops)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  BRAND
+  DEALER
+  CONSUMER
+}
+
+enum ProductSource {
+  BRAND
+  DEALER
+}
+
+enum AvailabilityStatus {
+  IN_STOCK
+  LIMITED
+  MADE_TO_ORDER
+  OUT_OF_STOCK
+  UNKNOWN
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  passwordHash String?
+  role      Role     @default(CONSUMER)
+
+  brand     Brand?
+  dealer    Dealer?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Brand {
+  id          String   @id @default(cuid())
+  name        String
+  legalName   String?
+  website     String?
+  logoUrl     String?
+
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+
+  products    Product[] @relation("BrandProducts")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Dealer {
+  id          String   @id @default(cuid())
+  name        String
+  legalName   String?
+  phone       String?
+  website     String?
+  logoUrl     String?
+
+  // Location (for "near me")
+  area        String?
+  postalCode  String?
+  lat         Float?
+  lon         Float?
+
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+
+  // Dealer-owned products (custom/local)
+  products    Product[] @relation("DealerOwnedProducts")
+
+  // Listings for Brand products or Dealer products (handoff)
+  listings    DealerListing[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  parentId  String?
+  parent    Category? @relation("CategoryTree", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryTree")
+
+  // Optional: which top pillar it belongs to (Χτίζω/Ανακαινίζω/Κατοικώ/Ενέργεια)
+  pillar    String?
+
+  products  Product[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([parentId])
+}
+
+model Product {
+  id            String        @id @default(cuid())
+  title         String
+  summary       String?
+  description   String?
+
+  source        ProductSource
+
+  // Brand product (authoritative catalog)
+  brandId       String?
+  brand         Brand?        @relation("BrandProducts", fields: [brandId], references: [id])
+
+  // Dealer-owned product (custom/local)
+  ownerDealerId String?
+  ownerDealer   Dealer?       @relation("DealerOwnedProducts", fields: [ownerDealerId], references: [id])
+
+  categoryId    String
+  category      Category      @relation(fields: [categoryId], references: [id])
+
+  // Media & structured knowledge for AI (kept flexible for MVP)
+  imagesJson        String?    // [{url, alt}] etc
+  specsJson         String?    // key-value or structured specs
+  instructionsJson  String?    // installation/use instructions, do/don't
+  certificationsJson String?   // standards/certs when available
+
+  // Commercial hints (NOT checkout)
+  msrp           Float?
+  currency       String?       // EUR
+  isMadeToOrder  Boolean       @default(false)
+  leadTimeDays   Int?
+
+  // Dealers that can sell/serve this product
+  listings       DealerListing[]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([source])
+  @@index([brandId])
+  @@index([ownerDealerId])
+  @@index([categoryId])
+}
+
+model DealerListing {
+  id           String             @id @default(cuid())
+  dealerId     String
+  dealer       Dealer             @relation(fields: [dealerId], references: [id])
+
+  productId    String
+  product      Product            @relation(fields: [productId], references: [id])
+
+  // Handoff (to dealer e-shop / page) + offer hints
+  externalUrl  String?            // link to dealer e-shop product page
+  price        Float?
+  currency     String?            // EUR
+  availability AvailabilityStatus @default(UNKNOWN)
+  notes        String?            // "με μέτρηση", "τηλέφωνο", "μόνο κατά παραγγελία", etc
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([dealerId, productId])
+  @@index([productId])
+  @@index([dealerId])
+}

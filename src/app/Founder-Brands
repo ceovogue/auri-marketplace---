@@ -1,0 +1,35 @@
+page.tsx
+export default function FounderBrandsPage() {
+  return (
+    <div className="cardPage">
+      <h1>Founder Brands</h1>
+      <p className="muted">
+        Εδώ θα εμφανίζονται τα brands που “ιδρύουν” την πλατφόρμα (premium προβολή).
+      </p>
+
+      <div className="gridCards">
+        <div className="cardBox">
+          <strong>Brand Example 1</strong>
+          <div className="muted">Περιγραφή / link / περιοχή</div>
+        </div>
+
+        <div className="cardBox">
+          <strong>Brand Example 2</strong>
+          <div className="muted">Περιγραφή / link / περιοχή</div>
+        </div>
+
+        <div className="cardBox">
+          <strong>+ Πρόσθεσε νέο Founder Brand</strong>
+          <div className="muted">Στην επόμενη φάση θα το κάνουμε φόρμα.</div>
+        </div>
+      </div>
+
+      <style jsx>{`
+        .cardPage{padding:10px 0}
+        .muted{color:var(--muted)}
+        .gridCards{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin-top:14px}
+        .cardBox{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:var(--shadow2)}
+      `}</style>
+    </div>
+  );
+}
