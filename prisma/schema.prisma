@@ -16,59 +16,20 @@ enum Role {
   BRAND
   ADMIN
 }
-
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  role      Role     @default(CONSUMER)
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String?  // ✅ ADD THIS (needed by auth)
+  role         Role     @default(CONSUMER)
 
-  brand     Brand?
-  dealer    Dealer?
+  brand        Brand?
+  dealer       Dealer?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
-model Brand {
-  id        String   @id @default(cuid())
-  name      String
 
-  ownerId   String   @unique
-  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
-  leads     Lead[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Dealer {
-  id        String   @id @default(cuid())
-  name      String
-
-  ownerId   String   @unique
-  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-
-  leads     Lead[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Lead {
-  id        String   @id @default(cuid())
-  name      String?
-  email     String?
-  phone     String?
-  message   String?
-
-  brandId   String?
-  brand     Brand?  @relation(fields: [brandId], references: [id], onDelete: SetNull)
-
-  dealerId  String?
-  dealer    Dealer? @relation(fields: [dealerId], references: [id], onDelete: SetNull)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+  
