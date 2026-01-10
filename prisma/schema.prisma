@@ -1,5 +1,5 @@
-// xspiti MVP schema (v1) - FIXED
-// Focus: Brands + Dealers + Products + Leads + Categories
+// prisma/schema.prisma
+// CLEAN & WORKING — copy/paste ONLY
 
 generator client {
   provider = "prisma-client-js"
@@ -15,156 +15,60 @@ enum Role {
   DEALER
   BRAND
   ADMIN
-  UNKNOWN
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  name         String?
-  passwordHash String?
-  role         Role     @default(CONSUMER)
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      Role     @default(CONSUMER)
 
-  // Explicit relation names (important because User relates to both Brand and Dealer)
-  brand        Brand?   @relation("UserBrand")
-  dealer       Dealer?  @relation("UserDealer")
+  brand     Brand?
+  dealer    Dealer?
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Brand {
   id        String   @id @default(cuid())
   name      String
-  legalName String?
-  website   String?
-  logoUrl   String?
 
-  // ✅ FIX: match your code (upsert where: { ownerId })
   ownerId   String   @unique
-  owner     User     @relation("UserBrand", fields: [ownerId], references: [id], onDelete: Cascade)
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
-  products  Product[] @relation("BrandProducts")
+  leads     Lead[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([ownerId])
 }
 
 model Dealer {
   id        String   @id @default(cuid())
   name      String
-  legalName String?
-  phone     String?
-  website   String?
-  logoUrl   String?
 
-  // Location (for "near me")
-  area      String?
-  postalCode String?
-  lat       Float?
-  lon       Float?
-
-  // ✅ Consistency: same pattern as Brand
   ownerId   String   @unique
-  owner     User     @relation("UserDealer", fields: [ownerId], references: [id], onDelete: Cascade)
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
-  // Dealer-owned products (custom/local)
-  products  Product[] @relation("DealerOwnedProducts")
-
-  // Listings for Brand products or Dealer products (handoff)
-  listings  DealerListing[]
+  leads     Lead[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([ownerId])
-}
-
-model Product {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  price       Float?
-  sku         String?
-  imageUrl    String?
-
-  // Brand product (optional)
-  brandId     String?
-  brand       Brand?   @relation("BrandProducts", fields: [brandId], references: [id], onDelete: SetNull)
-
-  // Dealer-owned product (optional)
-  dealerId    String?
-  dealer      Dealer?  @relation("DealerOwnedProducts", fields: [dealerId], references: [id], onDelete: SetNull)
-
-  // Category (optional)
-  categoryId  String?
-  category    CategoryTree? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-
-  listings    DealerListing[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([brandId])
-  @@index([dealerId])
-  @@index([categoryId])
-}
-
-model DealerListing {
-  id        String   @id @default(cuid())
-
-  dealerId  String
-  dealer    Dealer   @relation(fields: [dealerId], references: [id], onDelete: Cascade)
-
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  // If you later want status/availability:
-  // status   String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([dealerId, productId])
-  @@index([dealerId])
-  @@index([productId])
 }
 
 model Lead {
-  id          String   @id @default(cuid())
-  name        String?
-  email       String?
-  phone       String?
-  message     String?
-
-  // Optional routing
-  brandId     String?
-  brand       Brand?   @relation(fields: [brandId], references: [id], onDelete: SetNull)
-
-  dealerId    String?
-  dealer      Dealer?  @relation(fields: [dealerId], references: [id], onDelete: SetNull)
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([brandId])
-  @@index([dealerId])
-}
-
-model CategoryTree {
   id        String   @id @default(cuid())
-  name      String
+  name      String?
+  email     String?
+  phone     String?
+  message   String?
 
-  parentId  String?
-  parent    CategoryTree? @relation("CategoryTree", fields: [parentId], references: [id])
-  children  CategoryTree[] @relation("CategoryTree")
+  brandId   String?
+  brand     Brand?  @relation(fields: [brandId], references: [id], onDelete: SetNull)
 
-  products  Product[]
+  dealerId  String?
+  dealer    Dealer? @relation(fields: [dealerId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([parentId])
 }
