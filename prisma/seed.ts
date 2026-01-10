@@ -1,93 +1,41 @@
-import { PrismaClient, Role, ProductSource, AvailabilityStatus } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+// prisma/seed.ts
+// Minimal seed to match the current Prisma schema
+
+import { PrismaClient, Role } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // Clear (order matters due to relations)
-  await prisma.dealerListing.deleteMany();
-  await prisma.product.deleteMany();
-  await prisma.category.deleteMany();
-  await prisma.dealer.deleteMany();
-  await prisma.brand.deleteMany();
-  await prisma.user.deleteMany();
+  // Create a minimal admin user (change email if you want)
+  const adminEmail = "admin@xspiti.gr";
 
-  const mkUser = async (email: string, password: string, role: Role, name?: string) => {
-    const passwordHash = await bcrypt.hash(password, 10);
-    return prisma.user.create({ data: { email, passwordHash, role, name } });
-  };
-
-  // Categories (very small demo tree)
-  const catBuild = await prisma.category.create({ data: { name: 'Χτίζω', slug: 'xtizo', pillar: 'Χτίζω' } });
-  const catMasonry = await prisma.category.create({
-    data: { name: 'Τοιχοποιία', slug: 'toixopoiia', pillar: 'Χτίζω', parentId: catBuild.id },
+  // Upsert user
+  const user = await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: { role: Role.ADMIN, name: "Admin" },
+    create: { email: adminEmail, role: Role.ADMIN, name: "Admin" },
   });
 
-  // Brand
-  const brandUser = await mkUser('brand@xspiti.gr', 'Brand123!', Role.BRAND, 'Demo Brand');
-  const brand = await prisma.brand.create({
-    data: { name: 'Demo Brand SA', website: 'https://example.com', userId: brandUser.id },
+  // Create Brand for the admin (1 brand per ownerId)
+  await prisma.brand.upsert({
+    where: { ownerId: user.id },
+    update: { name: "Demo Brand" },
+    create: { name: "Demo Brand", ownerId: user.id },
   });
 
-  // Dealer
-  const dealerUser = await mkUser('dealer@xspiti.gr', 'Dealer123!', Role.DEALER, 'Demo Dealer');
-  const dealer = await prisma.dealer.create({
-    data: { name: 'Demo Dealer (Αθήνα)', area: 'Αθήνα', postalCode: '10557', userId: dealerUser.id },
+  // Create Dealer for the admin (1 dealer per ownerId)
+  await prisma.dealer.upsert({
+    where: { ownerId: user.id },
+    update: { name: "Demo Dealer" },
+    create: { name: "Demo Dealer", ownerId: user.id },
   });
 
-  // Brand product
-  const p1 = await prisma.product.create({
-    data: {
-      title: 'Τσιμεντόλιθος (standard)',
-      summary: 'Τυποποιημένο δομικό υλικό για τοιχοποιία.',
-      source: ProductSource.BRAND,
-      brandId: brand.id,
-      categoryId: catMasonry.id,
-      specsJson: JSON.stringify({ dimensions: '20x40', strength: 'C12/15' }),
-      instructionsJson: JSON.stringify({ note: 'Ακολουθήστε τις οδηγίες του κατασκευαστή.' }),
-    },
-  });
-
-  // Dealer custom product
-  const p2 = await prisma.product.create({
-    data: {
-      title: 'Τσιμεντόλιθος ειδικού σχήματος (custom)',
-      summary: 'Κατασκευή κατά παραγγελία για ειδικές εφαρμογές.',
-      source: ProductSource.DEALER,
-      ownerDealerId: dealer.id,
-      categoryId: catMasonry.id,
-      isMadeToOrder: true,
-      leadTimeDays: 7,
-      specsJson: JSON.stringify({ note: 'Διαστάσεις/σχήματα κατόπιν μέτρησης.' }),
-    },
-  });
-
-  // Dealer listings (handoff)
-  await prisma.dealerListing.createMany({
-    data: [
-      {
-        dealerId: dealer.id,
-        productId: p1.id,
-        availability: AvailabilityStatus.LIMITED,
-        externalUrl: 'https://example.com/dealer/product-1',
-        notes: 'Διαθέσιμο κατόπιν επικοινωνίας.',
-      },
-      {
-        dealerId: dealer.id,
-        productId: p2.id,
-        availability: AvailabilityStatus.MADE_TO_ORDER,
-        externalUrl: 'https://example.com/dealer/custom-1',
-        notes: 'Μόνο κατά παραγγελία (απαιτείται μέτρηση).',
-      },
-    ],
-  });
-
-  console.log('Seed complete.');
+  console.log("✅ Seed completed");
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error("❌ Seed failed:", e);
     process.exit(1);
   })
   .finally(async () => {
