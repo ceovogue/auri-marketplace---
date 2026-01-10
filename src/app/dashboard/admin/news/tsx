@@ -1,0 +1,64 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { api } from "@/lib/client";
+
+export default function AdminModerationNews() {
+  const [posts, setPosts] = useState<any[]>([]);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function load() {
+    const data = await api<any[]>("/api/admin/news/pending");
+    setPosts(data);
+  }
+
+  useEffect(() => {
+    load().catch(() => setMsg("Δεν έχεις πρόσβαση ή δεν είσαι συνδεδεμένος."));
+  }, []);
+
+  return (
+    <main className="grid" style={{ maxWidth: 900 }}>
+      <section className="card">
+        <h2 style={{ marginTop: 0 }}>Admin — Έγκριση Χρήσιμων & Νέων</h2>
+        <p className="muted">Εδώ εγκρίνεις ό,τι υποβάλλουν Brands/Dealers.</p>
+        {msg && <p>{msg}</p>}
+      </section>
+
+      {posts.length === 0 ? (
+        <div className="card muted">Δεν υπάρχουν pending άρθρα.</div>
+      ) : (
+        posts.map((p) => (
+          <div key={p.id} className="card">
+            <div className="row" style={{ justifyContent: "space-between" }}>
+              <strong>{p.title}</strong>
+              <span className="badge">PENDING</span>
+            </div>
+            <div className="muted" style={{ marginTop: 6 }}>
+              Author: {p.author?.email} ({p.author?.role})
+            </div>
+            {p.excerpt && <p className="muted">{p.excerpt}</p>}
+            <details>
+              <summary className="muted">Προβολή κειμένου</summary>
+              <p style={{ whiteSpace: "pre-wrap" }}>{p.content}</p>
+            </details>
+
+            <div className="row" style={{ marginTop: 12 }}>
+              <button
+                className="btn"
+                onClick={async () => {
+                  await api("/api/admin/news/publish", {
+                    method: "POST",
+                    body: JSON.stringify({ id: p.id }),
+                  });
+                  await load();
+                }}
+              >
+                Publish
+              </button>
+            </div>
+          </div>
+        ))
+      )}
+    </main>
+  );
+}

@@ -1,0 +1,15 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16
+    container_name: xspiti_db
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: xspiti
+    ports:
+      - "5432:5432"
+    volumes:
+      - xspiti_pg:/var/lib/postgresql/data
+volumes:
+  xspiti_pg:
