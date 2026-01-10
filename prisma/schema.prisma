@@ -1,5 +1,5 @@
 // prisma/schema.prisma
-// CLEAN & WORKING — copy/paste ONLY
+// FULL WORKING FILE — copy/paste ONLY
 
 generator client {
   provider = "prisma-client-js"
@@ -16,20 +16,68 @@ enum Role {
   BRAND
   ADMIN
 }
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
   name         String?
-  passwordHash String?  // ✅ ADD THIS (needed by auth)
+  passwordHash String?
   role         Role     @default(CONSUMER)
 
-  brand        Brand?
-  dealer       Dealer?
+  // explicit names to avoid Prisma confusion
+  brand        Brand?   @relation("UserBrand")
+  dealer       Dealer?  @relation("UserDealer")
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
 
+model Brand {
+  id        String   @id @default(cuid())
+  name      String
 
+  ownerId   String   @unique
+  owner     User     @relation("UserBrand", fields: [ownerId], references: [id], onDelete: Cascade)
 
-  
+  leads     Lead[]   @relation("BrandLeads")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+model Dealer {
+  id        String   @id @default(cuid())
+  name      String
+
+  ownerId   String   @unique
+  owner     User     @relation("UserDealer", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  leads     Lead[]   @relation("DealerLeads")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+model Lead {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String?
+  phone     String?
+  message   String?
+
+  brandId   String?
+  brand     Brand?   @relation("BrandLeads", fields: [brandId], references: [id], onDelete: SetNull)
+
+  dealerId  String?
+  dealer    Dealer?  @relation("DealerLeads", fields: [dealerId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brandId])
+  @@index([dealerId])
+}
